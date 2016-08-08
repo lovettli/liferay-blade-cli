@@ -21,7 +21,7 @@ import aQute.lib.getopt.Description;
 import aQute.lib.getopt.Options;
 
 import java.io.File;
-
+import java.io.InputStream;
 import java.net.URL;
 
 import java.nio.file.Files;
@@ -94,8 +94,20 @@ public class SamplesCommand {
 				FileUtils.copyDirectory(file, dest);
 
 				updateBuildGradle(dest);
+
+				if (!Util.hasGradleWrapper(dest)) {
+					addGradleWrapper(dest);
+				}
 			}
 		}
+	}
+
+	private void addGradleWrapper(File dest) throws Exception {
+		InputStream in = SamplesCommand.class.getResourceAsStream("/wrapper.zip");
+
+		Util.copy(in, dest);
+
+		new File(dest, "gradlew").setExecutable(true);
 	}
 
 	private String deindent(String s) {
@@ -149,17 +161,58 @@ public class SamplesCommand {
 			WordUtils.wrap(StringUtils.join(samples, ", "), 80));
 	}
 
-	private String parseGradleScript(String script, String section) {
-		int begin = script.indexOf(section + " {") + section.length() + 2;
+	private String parseGradleScript(
+		String script, String section, boolean contentsOnly) {
+
+		int begin = script.indexOf(section + " {");
 		int end = begin;
 		int count = 0;
+
+		if (contentsOnly) {
+			begin += section.length() + 2;
+		}
 
 		while (true) {
 			char c = script.charAt(end);
 
+			if ((count != 0) && (c == '}')) {
+				count--;
+			}
+			else if (c == '{') {
+				count++;
+			}
+
 			if ((count == 0) && (c == '}')) {
+				if (!contentsOnly) {
+					end++;
+				}
+
 				break;
 			}
+
+			end++;
+		}
+
+		String newScript = script.substring(begin, end);
+
+		if (contentsOnly) {
+			return deindent(newScript);
+		}
+
+		return newScript;
+	}
+
+	private String removeGradleSection(String script, String section) {
+		int begin = script.indexOf(section + " {");
+		int end = begin;
+		int count = 0;
+
+		if (begin == -1) {
+			return script;
+		}
+
+		while (true) {
+			char c = script.charAt(end);
 
 			if ((count != 0) && (c == '}')) {
 				count--;
@@ -169,66 +222,50 @@ public class SamplesCommand {
 			}
 
 			end++;
+
+			if ((count == 0) && (c == '}')) {
+				break;
+			}
 		}
 
-		return script.substring(begin, end);
+		return removeGradleSection(
+			script.substring(0, begin) + script.substring(end, script.length()),
+			section);
 	}
 
 	private void updateBuildGradle(File dir) throws Exception {
 		File bladeRepo = new File(_blade.getCacheDir(), _BLADE_REPO_NAME);
 
-		File parentBuildGradleFile = new File(
-			bladeRepo, "liferay-gradle/build.gradle");
-
-		String parentScript = parseGradleScript(
-			Util.read(parentBuildGradleFile), "subprojects");
-
 		File sampleGradleFile = new File(dir, "build.gradle");
 
 		String script = Util.read(sampleGradleFile);
 
-		if (Util.isWorkspace(dir)) {
-			parentScript = parseGradleScript(parentScript, "dependencies");
+		if (!Util.isWorkspace(dir)) {
+			File parentBuildGradleFile = new File(
+				bladeRepo, "liferay-gradle/build.gradle");
 
-			if (script.contains("dependencies")) {
-				String dependencies = parseGradleScript(script, "dependencies");
+			String parentBuildScript = parseGradleScript(
+				Util.read(parentBuildGradleFile), "buildscript", false);
 
-				script = script.replace(
-					dependencies, parentScript + dependencies);
-			}
-			else {
-				script += "\ndependencies {\n" + deindent(parentScript) + "}";
-			}
-		}
-		else {
-			if (script.contains("dependencies")) {
-				String dependencies = parseGradleScript(script, "dependencies");
+			String parentSubprojectsScript = parseGradleScript(
+				Util.read(parentBuildGradleFile), "subprojects", true);
 
-				String parentDependencies = parseGradleScript(
-					parentScript, "dependencies");
+			parentSubprojectsScript = removeGradleSection(
+				parentSubprojectsScript, "buildscript");
 
-				parentScript = parentScript.replace(
-					parentDependencies, parentDependencies + dependencies);
+			System.out.println(parentSubprojectsScript);
 
-				int begin = script.indexOf("dependencies");
-				int end = script.indexOf("}", begin) + 1;
-
-				script = script.replace(
-					script.substring(begin, end), deindent(parentScript));
-			}
-			else {
-				script += deindent(parentScript);
-			}
+			script = parentBuildScript + parentSubprojectsScript + script;
 		}
 
 		Files.write(sampleGradleFile.toPath(), script.getBytes());
 	}
 
 	private static final String _BLADE_REPO_ARCHIVE_NAME =
-			"liferay-blade-samples-master.zip";
+		"liferay-blade-samples-master.zip";
 
 	private static final String _BLADE_REPO_NAME =
-			"liferay-blade-samples-master";
+		"liferay-blade-samples-master";
 
 	private static final String _BLADE_REPO_URL =
 		"https://github.com/liferay/liferay-blade-samples/archive/master.zip";

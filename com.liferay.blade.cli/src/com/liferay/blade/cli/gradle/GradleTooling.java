@@ -16,22 +16,17 @@
 
 package com.liferay.blade.cli.gradle;
 
-import aQute.bnd.osgi.Jar;
-import aQute.bnd.osgi.Processor;
-import aQute.bnd.osgi.Resource;
-
 import aQute.lib.io.IO;
 
+import com.liferay.blade.cli.Util;
 import com.liferay.blade.gradle.model.CustomModel;
 
 import java.io.File;
 import java.io.InputStream;
-
 import java.nio.file.Files;
-
-import java.util.Map.Entry;
 import java.util.Set;
 
+import org.gradle.tooling.BuildLauncher;
 import org.gradle.tooling.GradleConnector;
 import org.gradle.tooling.ModelBuilder;
 import org.gradle.tooling.ProjectConnection;
@@ -41,8 +36,8 @@ import org.gradle.tooling.ProjectConnection;
  */
 public class GradleTooling {
 
-	public static File findLatestAvailableArtifact(String artifact)
-		throws Exception {
+	public static File findLatestAvailableArtifact(
+			String artifact) throws Exception {
 
 		return findLatestAvailableArtifact(
 			artifact,
@@ -74,7 +69,10 @@ public class GradleTooling {
 
 			connection = connector.connect();
 
-			connection.newBuild().forTasks("copyDep").run();
+			BuildLauncher buildLauncher =
+					connection.newBuild().forTasks("copyDep");
+
+			buildLauncher.run();
 		}
 		finally {
 			connection.close();
@@ -92,30 +90,22 @@ public class GradleTooling {
 		return model.getOutputFiles();
 	}
 
-	private static void copy(InputStream in, File outputDir) throws Exception {
-		try (Jar jar = new Jar("dot", in)) {
-			for (Entry<String, Resource> e : jar.getResources().entrySet()) {
-				String path = e.getKey();
+	public static Set<String> getPluginClassNames(File cacheDir, File buildDir)
+		throws Exception {
 
-				Resource r = e.getValue();
+		final CustomModel model = getModel(
+				CustomModel.class, cacheDir, buildDir);
 
-				//path = path.replaceAll(type + "/" + template + "/", "");
+		return model.getPluginClassNames();
+	}
 
-				File dest = Processor.getFile(outputDir, path);
+	public static boolean isLiferayModule(File cacheDir, File buildDir)
+		throws Exception {
 
-				if ((dest.lastModified() < r.lastModified()) ||
-					(r.lastModified() <= 0)) {
+		final CustomModel model = getModel(
+				CustomModel.class, cacheDir, buildDir);
 
-					File dp = dest.getParentFile();
-
-					if (!dp.exists() && !dp.mkdirs()) {
-						throw new Exception("Could not create directory " + dp);
-					}
-
-					IO.copy(r.openInputStream(), dest);
-				}
-			}
-		}
+		return model.isLiferayModule();
 	}
 
 	private static <T> T getModel(
@@ -131,7 +121,7 @@ public class GradleTooling {
 
 		try {
 			connection = connector.connect();
-			ModelBuilder<T> modelBuilder = (ModelBuilder<T>)connection.model(
+			ModelBuilder<T> modelBuilder = connection.model(
 				modelClass);
 
 			final File depsDir = new File(cacheDir, "deps");
@@ -141,7 +131,7 @@ public class GradleTooling {
 			InputStream in = GradleTooling.class.getResourceAsStream(
 				"/deps.zip");
 
-			copy(in, depsDir);
+			Util.copy(in, depsDir);
 
 			final String initScriptTemplate = IO.collect(
 				GradleTooling.class.getResourceAsStream("init.gradle"));

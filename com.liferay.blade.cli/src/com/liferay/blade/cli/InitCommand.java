@@ -26,10 +26,8 @@ import com.liferay.blade.cli.gradle.GradleTooling;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
-
 import java.nio.file.Files;
 import java.nio.file.Path;
-
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -44,6 +42,8 @@ public class InitCommand {
 
 	public static final String DESCRIPTION =
 		"Initializes a new Liferay workspace";
+
+	public static final String WORKSPACE_VERSION = "1.0.37";
 
 	public InitCommand(blade blade, InitOptions options) throws Exception {
 		_blade = blade;
@@ -122,7 +122,7 @@ public class InitCommand {
 		}
 	}
 
-	public File getWorkspaceZip() throws Exception {
+	File getWorkspaceZip() throws Exception {
 		trace("Connecting to repository to find latest workspace template.");
 
 		/*final Artifact workspacePluginArtifact =
@@ -138,7 +138,7 @@ public class InitCommand {
 		File zipFile = GradleTooling.findLatestAvailableArtifact(
 			"group: 'com.liferay', " +
 				"name: 'com.liferay.gradle.plugins.workspace', " +
-					"version: '1+', classifier: 'sources', ext: 'jar'");
+					"version: '" + WORKSPACE_VERSION + "', classifier: 'sources', ext: 'jar'");
 
 		trace("Found workspace template " + zipFile);
 
@@ -149,8 +149,12 @@ public class InitCommand {
 	@Description(DESCRIPTION)
 	public interface InitOptions extends Options {
 
+		@Description(
+				"create anyway if there are files located at target folder")
 		public boolean force();
 
+		@Description("force to refresh workspace template")
+		public boolean refresh();
 	}
 
 	private void addError(String msg) {
@@ -182,6 +186,7 @@ public class InitCommand {
 
 		FileFilter fileFilter = new FileFilter() {
 
+			@Override
 			public boolean accept(File pathname) {
 				return
 					(!pathname.getName().equals(sdkDirName) ||
