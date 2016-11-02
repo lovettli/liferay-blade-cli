@@ -34,7 +34,8 @@ import org.osgi.service.component.annotations.Component;
 		"problem.summary=The method render has been removed from the interfaces AssetRenderer and WorkflowHandler.",
 		"problem.tickets=LPS-56705",
 		"problem.title=Removed render Method from AssetRenderer API and WorkflowHandler API",
-		"problem.section=#removed-render-method-from-assetrenderer-api-and-workflowhandler-api"
+		"problem.section=#removed-render-method-from-assetrenderer-api-and-workflowhandler-api",
+		"implName=AssetRendererAndWorkflowHandlerRenderInvocation"
 	},
 	service = FileMigrator.class
 )
@@ -51,11 +52,11 @@ public class AssetRendererAndWorkflowHandlerRenderInvocation extends JavaFileMig
 
 		// render method declarations
 		List<SearchResult> declarations = javaFileChecker
-				.findMethodDeclaration("render", assetRendererArgTypes);
+				.findMethodDeclaration("render", assetRendererArgTypes, null);
 		searchResults.addAll(declarations);
 
 		declarations = javaFileChecker.findMethodDeclaration("render",
-				workflowHandlerArgTypes);
+				workflowHandlerArgTypes, null);
 		searchResults.addAll(declarations);
 
 		// render method invocations
