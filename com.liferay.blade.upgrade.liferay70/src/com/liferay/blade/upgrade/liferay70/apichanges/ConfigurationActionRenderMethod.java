@@ -33,7 +33,8 @@ import org.osgi.service.component.annotations.Component;
 		"problem.summary=Removed render Method from ConfigurationAction API",
 		"problem.tickets=LPS-56300",
 		"problem.title=ConfigurationAction render method",
-		"problem.section=#removed-render-method-from-configurationaction-api"
+		"problem.section=#removed-render-method-from-configurationaction-api",
+		"implName=ConfigurationActionRenderMethod"
 	},
 	service = FileMigrator.class
 )
@@ -45,7 +46,7 @@ public class ConfigurationActionRenderMethod extends JavaFileMigrator {
 
 		// render method declarations
 		List<SearchResult> declarations = javaFileChecker.findMethodDeclaration("render",
-				new String[] { "PortletConfig", "RenderRequest", "RenderResponse" });
+				new String[] { "PortletConfig", "RenderRequest", "RenderResponse" }, null);
 
 		searchResults.addAll(declarations);
 
