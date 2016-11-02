@@ -24,20 +24,19 @@ import com.liferay.blade.upgrade.liferay70.ImportStatementMigrator;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 import org.osgi.service.component.annotations.Component;
 
 @Component(
 	property = {
-		"file.extensions=java",
+		"file.extensions=java,jsp,jspf",
 		"problem.summary=The portal-kernel and portal-impl folders have many packages with the same name. Therefore, all of these packages are affected by the split package problem",
 		"problem.tickets=LPS-61952",
 		"problem.title=Renamed Packages to Fix the Split Packages Problem",
 		"problem.section=#renamed-packages-to-fix-the-split-packages-problem",
-		"auto.correct=import"
+		"auto.correct=import",
+		"implName=RenamePortalKernelImports"
 	},
 	service = {
 		FileMigrator.class,
@@ -208,13 +207,27 @@ public class RenamePortalKernelImports extends ImportStatementMigrator {
 	public List<SearchResult> searchFile(File file, JavaFile javaFile) {
 		final List<SearchResult> searchResults = new ArrayList<>();
 
-		for (String importName : get_imports().keySet()) {
+		for (String importName : getImports().keySet()) {
 			final List<SearchResult> importResult = javaFile.findImports(importName, IMPORTS);
 
 			if (importResult.size() != 0) {
 				for (SearchResult result : importResult) {
-					result.autoCorrectContext = getPrefix() + importName;
-					searchResults.add(result);
+					// make sure that our import is not in list of fixed imports
+					boolean skip = false;
+
+					if (result.searchContext != null) {
+						for (String fixed : IMPORTS_FIXED) {
+							if (result.searchContext.contains(fixed)) {
+								skip = true;
+								break;
+							}
+						}
+					}
+
+					if (!skip) {
+						result.autoCorrectContext = getPrefix() + importName;
+						searchResults.add(result);
+					}
 				}
 
 			}
@@ -224,11 +237,10 @@ public class RenamePortalKernelImports extends ImportStatementMigrator {
 	}
 
 	private List<SearchResult> removeDuplicate(List<SearchResult> searchResults) {
-		final Set<SearchResult> sr = new HashSet<>();
 		final List<SearchResult> newList = new ArrayList<>();
 
 		for (SearchResult searchResult : searchResults) {
-			if (sr.add(searchResult)) {
+			if (!newList.contains(searchResult)) {
 				newList.add(searchResult);
 			}
 		}

@@ -36,7 +36,8 @@ import org.osgi.service.component.annotations.Component;
 			" Indexer.getQueryString(SearchContext, Query) has been removed, in favor of calling SearchEngineUtil." +
 			"getQueryString(SearchContext, Query)",
 		"problem.tickets=LPS-55928",
-		"problem.section=#moved-indexer-addrelatedentryfields-and-indexer-reindexddmstructures-and-re"
+		"problem.section=#moved-indexer-addrelatedentryfields-and-indexer-reindexddmstructures-and-re",
+		"implName=IndexerThreeMethodsChange"
 	},
 	service = FileMigrator.class
 )
@@ -47,15 +48,15 @@ public class IndexerThreeMethodsChange  extends JavaFileMigrator {
 		final List<SearchResult> searchResults = new ArrayList<>();
 
 		List<SearchResult> declarations = javaFileChecker.findMethodDeclaration(
-				"addRelatedEntryFields", new String[] { "Document", "Object" });
+				"addRelatedEntryFields", new String[] { "Document", "Object" }, null);
 		searchResults.addAll(declarations);
 
 		declarations = javaFileChecker.findMethodDeclaration(
-				"reindexDDMStructures", new String[] { "List<Long>" });
+				"reindexDDMStructures", new String[] { "List<Long>" }, null);
 		searchResults.addAll(declarations);
 
 		declarations = javaFileChecker.findMethodDeclaration("getQueryString",
-				new String[] { "SearchContext", "Query" });
+				new String[] { "SearchContext", "Query" }, null);
 		searchResults.addAll(declarations);
 
 		List<SearchResult> invocations = javaFileChecker.findMethodInvocations(
