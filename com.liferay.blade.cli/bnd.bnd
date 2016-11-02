@@ -1,4 +1,4 @@
-Bundle-Version: 1.0.3.${tstamp}
+Bundle-Version: 2.0.0.${tstamp}
 
 JPM-Command: blade
 
@@ -161,6 +161,7 @@ Private-Package:\
 	org.osgi.service.log,\
 	org.osgi.service.repository,\
 	org.slf4j;-split-package:=merge-first,\
+	org.slf4j.event;-split-package:=merge-first,\
 	org.slf4j.helpers;-split-package:=merge-first,\
 	org.slf4j.spi;-split-package:=merge-first,\
 	org.slf4j.impl
@@ -170,6 +171,7 @@ Private-Package:\
 	biz.aQute.bndlib,\
 	biz.aQute.repository,\
 	com.liferay.blade.gradle.model;version=latest,\
+	com.liferay.project.templates;version=2.0.1,\
 	jcl.over.slf4j,\
 	org.apache.commons.io,\
 	org.apache.commons.lang3,\
@@ -202,6 +204,7 @@ Private-Package:\
 -dependson: com.liferay.blade.gradle
 
 -includeresource: \
+	@com.liferay.project.templates-*.jar,\
 	deps.zip,\
 	wrapper.zip
 

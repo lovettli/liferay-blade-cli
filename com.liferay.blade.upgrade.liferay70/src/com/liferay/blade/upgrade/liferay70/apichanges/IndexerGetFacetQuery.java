@@ -33,7 +33,8 @@ import org.osgi.service.component.annotations.Component;
 		"problem.summary=Replaced Method getFacetQuery with getFacetBooleanFilter in Indexer",
 		"problem.tickets=LPS-56064",
 		"problem.title=Indexer API Changes",
-		"problem.section=#replaced-method-getpermissionquery-with-getpermissionfilter-in-searchpermis"
+		"problem.section=#replaced-method-getpermissionquery-with-getpermissionfilter-in-searchpermis",
+		"implName=IndexerGetFacetQuery"
 	},
 	service = FileMigrator.class
 )
@@ -44,7 +45,7 @@ public class IndexerGetFacetQuery extends JavaFileMigrator {
 		final List<SearchResult> searchResults = new ArrayList<>();
 
 		final List<SearchResult> declaration = javaFileChecker.findMethodDeclaration("getFacetQuery",
-				new String[] { "String", "SearchContextPortletURL" });
+				new String[] { "String", "SearchContextPortletURL" }, null);
 
 		searchResults.addAll(declaration);
 
